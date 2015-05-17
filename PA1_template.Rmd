@@ -1,0 +1,210 @@
+---
+title: "RepData_CourseProject1"
+author: "Carolyn"
+date: "Friday, May 15, 2015"
+output: html_document
+---
+
+Task 0: Loading and preprocessing the data
+
+0.1 Load the data
+
+```{r}
+data<-read.csv("activity.csv")
+```
+
+Take a look at the data
+
+```{r}
+str(data)
+```
+
+```{r}
+head(data)
+```
+
+Things we noticed: 
+
+1. The steps field has a lot of missing values.
+
+2. The date field is of class factor.
+
+ 
+Task 1: What is mean total number of steps taken per day? (can ignore the missing values in the dataset)
+
+1.1 Make a histogram of the total number of steps taken each day
+
+First we need to sum the total number of steps taken each day. We can use the ddply function in the plyr package to calculate factor sums.
+
+```{r}
+library(plyr)
+StepsPerDay<-ddply(data, .(date), summarize, TotalStepsPerDay = sum(steps, na.rm = TRUE))
+str(StepsPerDay)
+```
+
+We can see that there are 61 observations which match our data of months of October and November (61 days in total). Also the first day's sum is 0, which match what we saw for the data.
+
+Now plot the histogram.
+
+```{r}
+hist(StepsPerDay$TotalStepsPerDay)
+```
+
+1.2 Calculate and report the mean and median total number of steps taken per day
+
+Mean:
+
+```{r}
+mean(StepsPerDay$TotalStepsPerDay, na.rm = TRUE)
+```
+
+Median:
+
+```{r}
+median(StepsPerDay$TotalStepsPerDay, na.rm = TRUE)
+```
+
+
+Task 2: What is the average daily activity pattern?
+
+2.1 Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+We can use the ddply function to calculate the average.
+
+```{r}
+StepsByInterval<-ddply(data, .(interval), summarize, AvgStep = mean(steps, na.rm = TRUE))
+```
+
+If we take a closer look at the StepsByInterval:
+
+```{r}
+head(StepsByInterval, n = 15)
+```
+
+We can see that the 5-minute interval is in 24-hour clock format. So we need to transform it into time format.
+
+```{r}
+StepsByInterval$intervalTrans<- sprintf("%04d", StepsByInterval$interval)
+StepsByInterval$intervalTrans<-strptime(StepsByInterval$intervalTrans, "%H%M")
+```
+
+Now plot:
+
+```{r}
+with(StepsByInterval, plot(intervalTrans, AvgStep, type = "l", xlab = "5-minute Interval", ylab = "Average Number of Steps"))
+```
+
+2.2 Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+If we look at the transformed StepsByInterval data frame:
+
+```{r}
+head(StepsByInterval)
+```
+
+We notice that the intervalTrans is using today's date by default. Although this does not matter when we plot in the above step, we need to take out that date and just keep the time when we do this task.
+
+```{r}
+StepsByInterval$intervalTrans<-strftime(StepsByInterval$intervalTrans, format="%H:%M:%S")
+StepsByInterval[StepsByInterval$AvgStep == max(StepsByInterval$AvgStep),]
+```
+
+So interval 835 (08:35) conatins the maximum number of steps on average.
+
+Task 3: Imputing missing values
+
+3.1 Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+```{r}
+sum(is.na(data$steps))
+```
+
+So the total number of rows with NAs is 2304.
+
+3.2 Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+First, let's fill the days that have NAs for all intervals using the mean for each interval. We can make use the StepsByInterval data frame from the previous task.
+
+```{r}
+dataNew<-data
+for (i in 1:nrow(dataNew)) {
+        if (is.na(dataNew[i,1])) {
+                dataNew[i,1]<-StepsByInterval[StepsByInterval[,1]==dataNew[i,3],2]}
+}
+```
+
+Let's check for NAs in steps again and see if we have filled all the rows.
+
+```{r}
+sum(is.na(dataNew$steps))
+```
+
+Indeed, we have filled missing data in all the rows.
+
+3.3 Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+dataNew created above is the new dataset. We can take a look at it.
+
+```{r}
+str(dataNew)
+```
+
+3.4 Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+We will repeat what we do in task 1 using the new dataset.
+
+```{r}
+StepsPerDayNew<-ddply(dataNew, .(date), summarize, TotalStepsPerDay = sum(steps))
+hist(StepsPerDayNew$TotalStepsPerDay)
+```
+
+Mean:
+
+```{r}
+mean(StepsPerDayNew$TotalStepsPerDay)
+```
+
+Median:
+
+```{r}
+median(StepsPerDayNew$TotalStepsPerDay)
+```
+
+So, these values differ from the estimates from the first part of the assignment. The impact of imputing missing data is that both the histogram and mean/median have higher values.
+
+Task 4: Are there differences in activity patterns between weekdays and weekends?
+
+4.1 Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+First let's add the new factor using the weekdays function.
+
+```{r}
+for ( i in 1:nrow(dataNew)) {
+        if (weekdays(strptime(dataNew[i,2], "%Y-%m-%d")) %in% c("Saturday", "Sunday")) {
+                dataNew[i,4]<-"weekend"
+        }
+        else {dataNew[i,4]<-"weekday"}
+}
+names(dataNew)[4]<-"DayInd"
+```
+
+Take a look.
+
+```{r}
+head(dataNew)
+```
+
+4.2 Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+We will use the similar method to calculate.
+
+```{r}
+StepsWeekday<-ddply(dataNew, .(interval,DayInd), summarize, AvgStep = mean(steps))
+```
+
+Let's use lattice to plot the panel plot.
+
+```{r}
+library(lattice)
+xyplot(AvgStep ~ interval | DayInd, data = StepsWeekday, layout = c(1, 2), type = "l", xlab = "Interval",ylab = "Number of steps")
+```
