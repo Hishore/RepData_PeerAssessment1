@@ -5,7 +5,7 @@ date: "Friday, May 15, 2015"
 output: html_document
 ---
 
-Task 0: Loading and preprocessing the data
+**Task 0: Loading and preprocessing the data**
 
 0.1 Load the data
 
@@ -50,7 +50,7 @@ Things we noticed:
 2. The date field is of class factor.
 
  
-Task 1: What is mean total number of steps taken per day? (can ignore the missing values in the dataset)
+**Task 1: What is mean total number of steps taken per day? (can ignore the missing values in the dataset)**
 
 1.1 Make a histogram of the total number of steps taken each day
 
@@ -59,17 +59,17 @@ First we need to sum the total number of steps taken each day. We can use the dd
 
 ```r
 library(plyr)
-StepsPerDay<-ddply(data, .(date), summarize, TotalStepsPerDay = sum(steps, na.rm = TRUE))
+StepsPerDay<-ddply(data, .(date), summarize, TotalStepsPerDay = sum(steps))
 str(StepsPerDay)
 ```
 
 ```
 ## 'data.frame':	61 obs. of  2 variables:
 ##  $ date            : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 2 3 4 5 6 7 8 9 10 ...
-##  $ TotalStepsPerDay: int  0 126 11352 12116 13294 15420 11015 0 12811 9900 ...
+##  $ TotalStepsPerDay: int  NA 126 11352 12116 13294 15420 11015 NA 12811 9900 ...
 ```
 
-We can see that there are 61 observations which match our data of months of October and November (61 days in total). Also the first day's sum is 0, which match what we saw for the data.
+We can see that there are 61 observations which match our data of months of October and November (61 days in total). Also the first day's sum is NA, which match what we saw for the data.
 
 Now plot the histogram.
 
@@ -90,7 +90,7 @@ mean(StepsPerDay$TotalStepsPerDay, na.rm = TRUE)
 ```
 
 ```
-## [1] 9354.23
+## [1] 10766.19
 ```
 
 Median:
@@ -101,11 +101,11 @@ median(StepsPerDay$TotalStepsPerDay, na.rm = TRUE)
 ```
 
 ```
-## [1] 10395
+## [1] 10765
 ```
 
 
-Task 2: What is the average daily activity pattern?
+**Task 2: What is the average daily activity pattern?**
 
 2.1 Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
@@ -146,7 +146,7 @@ We can see that the 5-minute interval is in 24-hour clock format. So we need to 
 
 
 ```r
-StepsByInterval$intervalTrans<- sprintf("%04d", StepsByInterval$interval)
+StepsByInterval$intervalTrans<-sprintf("%04d", StepsByInterval$interval)
 StepsByInterval$intervalTrans<-strptime(StepsByInterval$intervalTrans, "%H%M")
 ```
 
@@ -170,15 +170,15 @@ head(StepsByInterval)
 
 ```
 ##   interval   AvgStep       intervalTrans
-## 1        0 1.7169811 2015-05-17 00:00:00
-## 2        5 0.3396226 2015-05-17 00:05:00
-## 3       10 0.1320755 2015-05-17 00:10:00
-## 4       15 0.1509434 2015-05-17 00:15:00
-## 5       20 0.0754717 2015-05-17 00:20:00
-## 6       25 2.0943396 2015-05-17 00:25:00
+## 1        0 1.7169811 2015-08-16 00:00:00
+## 2        5 0.3396226 2015-08-16 00:05:00
+## 3       10 0.1320755 2015-08-16 00:10:00
+## 4       15 0.1509434 2015-08-16 00:15:00
+## 5       20 0.0754717 2015-08-16 00:20:00
+## 6       25 2.0943396 2015-08-16 00:25:00
 ```
 
-We notice that the intervalTrans is using today's date by default. Although this does not matter when we plot in the above step, we need to take out that date and just keep the time when we do this task.
+We notice that the intervalTrans is using today's date by default. Although this does not matter when we plot in the above step, we need to take out that date and just keep the time.
 
 
 ```r
@@ -193,7 +193,7 @@ StepsByInterval[StepsByInterval$AvgStep == max(StepsByInterval$AvgStep),]
 
 So interval 835 (08:35) conatins the maximum number of steps on average.
 
-Task 3: Imputing missing values
+**Task 3: Imputing missing values**
 
 3.1 Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
@@ -284,9 +284,9 @@ median(StepsPerDayNew$TotalStepsPerDay)
 ## [1] 10766.19
 ```
 
-So, these values differ from the estimates from the first part of the assignment. The impact of imputing missing data is that both the histogram and mean/median have higher values.
+The height of the bars in the historgram increase since we filled the missing values. However the mean remain same because we use the mean steps of each interval to fill the missing values. For the same reason, median remain almost the same as well.
 
-Task 4: Are there differences in activity patterns between weekdays and weekends?
+**Task 4: Are there differences in activity patterns between weekdays and weekends?**
 
 4.1 Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
